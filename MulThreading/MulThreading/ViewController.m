@@ -107,8 +107,8 @@
 {
     NSLog(@"test6-任务A");
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSLog(@"test6-任务C");
-    }); 
+        NSLog(@"test6-任务C?");
+    });
     NSLog(@"test6-任务B");
 }
 

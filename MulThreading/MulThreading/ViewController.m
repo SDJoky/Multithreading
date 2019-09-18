@@ -9,16 +9,38 @@
 #import "ViewController.h"
 
 @interface ViewController ()
-
+@property (nonatomic, strong) NSThread *expThread;
 @end
 
 @implementation ViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+//    让一个子线程不进入消亡状态，等待其他线程发来消息，处理其他事件
+    self.expThread = [[NSThread alloc] initWithTarget:self selector:@selector(expRun) object:nil];
+    [self.expThread start];
     [self test6];
-//    [self test7];
-//    [self test8];
+    [self test7];
+    [self test8];
+//    往常驻线程发送消息
+    [self performSelector:@selector(work) onThread:self.expThread withObject:nil waitUntilDone:NO];
+    
+//    常见的放卡顿操作
+//    [self.imageView performSelector:@selector(setImage:) withObject:[UIImage imageNamed:@"01"] afterDelay:3.0 inModes:@[NSDefaultRunLoopMode]];
+ 
+
+}
+
+- (void)expRun {
+    @autoreleasepool {
+        // 添加port相当于添加Source 让线程不死
+        [[NSRunLoop currentRunLoop] addPort:[NSPort port] forMode:NSDefaultRunLoopMode];
+        [[NSRunLoop currentRunLoop] run];
+    }
+}
+
+- (void)work {
+    NSLog(@"常驻线程work");
 }
 
 //任务在主线程同步
@@ -107,9 +129,9 @@
 {
     NSLog(@"test6-任务A");
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSLog(@"test6-任务C ");
+        NSLog(@"test6---任务C ");
     });
-    NSLog(@"test6-任务B");
+    NSLog(@"test6--任务B");
 }
 
 - (void)test7
@@ -120,11 +142,11 @@
     });
     
     dispatch_group_async(group, dispatch_get_global_queue(0, 0), ^{
-        NSLog(@"test7-任务B");
+        NSLog(@"test7--任务B");
     });
     
     dispatch_group_notify(group, dispatch_get_global_queue(0, 0), ^{
-        NSLog(@"test7-任务C");
+        NSLog(@"test7---任务C");
     });
 }
 
@@ -136,19 +158,19 @@
     });
     
     dispatch_async(myQueue, ^{
-        NSLog(@"test8-任务B");
+        NSLog(@"test8--任务B");
     });
     //barrier之前的执行完 再执行后面的async,前后均异步无序
     dispatch_barrier_async(myQueue, ^{
-        NSLog(@"test8-任务C");
+        NSLog(@"test8---任务C");
     });
     
     dispatch_async(myQueue, ^{
-        NSLog(@"test8-任务D");
+        NSLog(@"test8----任务D");
     });
     
     dispatch_async(myQueue, ^{
-        NSLog(@"test8-任务E");
+        NSLog(@"test8-----任务E");
     });
     
     

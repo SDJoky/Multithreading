@@ -19,9 +19,7 @@
 //    让一个子线程不进入消亡状态，等待其他线程发来消息，处理其他事件
     self.expThread = [[NSThread alloc] initWithTarget:self selector:@selector(expRun) object:nil];
     [self.expThread start];
-    [self test6];
-    [self test7];
-    [self test8];
+    [self test3];
 //    往常驻线程发送消息
     [self performSelector:@selector(work) onThread:self.expThread withObject:nil waitUntilDone:NO];
     
@@ -72,7 +70,7 @@
     NSLog(@"任务1");
     dispatch_async(queue, ^{
         NSLog(@"任务2");
-        //EXC_BAD_INSTRUCTION 死锁
+        //EXC_BAD_INSTRUCTION 死锁 任务在同一个队列
         dispatch_sync(queue, ^{
             NSLog(@"任务3");
         });
@@ -108,10 +106,11 @@
  */
 - (void)test5
 {
-    //任务4与1 并行 顺序不固定
+    NSLog(@"test5 start");
+    //任务4与1 并行 顺序不固定 (41523 / 14523)
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
         NSLog(@"任务1");
-        //3在5后面 没有了死锁，3后继续可执行4
+        //3在5后面 没有了死锁
         dispatch_sync(dispatch_get_main_queue(), ^{
             NSLog(@"任务2");
         });
@@ -119,23 +118,27 @@
     });
     NSLog(@"任务4");
     //死循环阻塞线程  则 5 2 3 均不执行
-    while (1) {
-        
-    }
+//    while (1) {
+//
+//    }
     NSLog(@"任务5");
 }
 
 - (void)test6
 {
-    NSLog(@"test6-任务A");
+//    C最后执行
     dispatch_async(dispatch_get_main_queue(), ^{
         NSLog(@"test6---任务C ");
     });
+    
+    NSLog(@"test6-任务A");
+    
     NSLog(@"test6--任务B");
 }
 
 - (void)test7
 {
+//    AB无序 C结尾
     dispatch_group_t group = dispatch_group_create();
     dispatch_group_async(group, dispatch_get_global_queue(0, 0), ^{
         NSLog(@"test7-任务A");
@@ -152,14 +155,16 @@
 
 - (void)test8
 {
+    NSLog(@"test8-Start");
     dispatch_queue_t myQueue = dispatch_queue_create("concurrent.queue",DISPATCH_QUEUE_CONCURRENT);
     dispatch_async(myQueue, ^{
         NSLog(@"test8-任务A");
     });
-    
+   
     dispatch_async(myQueue, ^{
         NSLog(@"test8--任务B");
     });
+    
     //barrier之前的执行完 再执行后面的async,前后均异步无序
     dispatch_barrier_async(myQueue, ^{
         NSLog(@"test8---任务C");
@@ -173,6 +178,7 @@
         NSLog(@"test8-----任务E");
     });
     
+    NSLog(@"test8-End");
     
 }
 

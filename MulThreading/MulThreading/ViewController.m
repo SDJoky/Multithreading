@@ -10,12 +10,22 @@
 
 @interface ViewController ()
 @property (nonatomic, strong) NSThread *expThread;
+//copy修饰还是NSArray类型 增删改会崩溃
+@property (nonatomic, copy) NSMutableArray *mutableArr;
+@property (nonatomic, strong) NSMutableArray *mutableStrongArr;
+//会跟随源数据变化
+@property (nonatomic, strong) NSArray *sArr;
+//不跟随源数据变化
+@property (nonatomic, copy) NSArray *cArr;
+
 @end
 
 @implementation ViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    [self testArr];
+
 //    让一个子线程不进入消亡状态，等待其他线程发来消息，处理其他事件
     self.expThread = [[NSThread alloc] initWithTarget:self selector:@selector(expRun) object:nil];
     [self.expThread start];
@@ -27,6 +37,39 @@
 //    [self.imageView performSelector:@selector(setImage:) withObject:[UIImage imageNamed:@"01"] afterDelay:3.0 inModes:@[NSDefaultRunLoopMode]];
  
 
+}
+
+//深浅拷贝测试
+- (void)testArr {
+
+    self.mutableStrongArr = [NSMutableArray arrayWithObjects:[NSMutableString stringWithString:@"1"],@"2", nil];
+    //    strong修饰的跟随源数据变化
+    self.sArr = self.mutableStrongArr;
+    //    copy修饰的不跟随源数据变化
+    self.cArr = self.mutableStrongArr;
+    [self.mutableStrongArr addObject:@"8"];
+
+    NSLog(@"%@---%@---%@",self.sArr,self.cArr,self.mutableStrongArr);
+
+    /*
+        No1：可变对象的copy和mutableCopy方法都是深拷贝（区别完全深拷贝与单层深拷贝） 。
+
+    　   No2：不可变对象的copy方法是浅拷贝，mutableCopy方法是深拷贝。
+
+    　   No3：copy方法返回的对象都是不可变对象。
+     */
+    NSArray *arrayCopy = [self.mutableStrongArr copy];
+    NSArray *arrayMutableCopy = [self.mutableStrongArr mutableCopy];
+    NSMutableArray *mutableArrayCopy = [self.mutableStrongArr copy];
+    NSMutableArray *mutableArrayMutableCopy = [self.mutableStrongArr mutableCopy];
+    NSLog(@"array地址%p\n     arrayCopy地址%p \n     arrayMutableCopy地址%p \n    mutableArrayCopy地址%p \n   mutableArrayCopy地址%p\n",self.mutableStrongArr,arrayCopy,arrayMutableCopy,mutableArrayCopy,mutableArrayMutableCopy);
+    NSLog(@"array = %@   arrayCopy = %@    arrayMutableCopy = %@   mutableArrayCopy =  %@    mutableArrayCopy =  %@",self.mutableStrongArr,arrayCopy,arrayMutableCopy,mutableArrayCopy,mutableArrayMutableCopy);
+
+    NSMutableString *mustr = self.mutableStrongArr[0];
+    [mustr appendString:@"2"];
+    NSLog(@"-----改变后------");
+    NSLog(@"%@---%@---%@",self.sArr,self.cArr,self.mutableStrongArr);
+    NSLog(@"array = %@   arrayCopy = %@    arrayMutableCopy = %@   mutableArrayCopy =  %@    mutableArrayCopy =  %@",self.mutableStrongArr,arrayCopy,arrayMutableCopy,mutableArrayCopy,mutableArrayMutableCopy);
 }
 
 - (void)expRun {
@@ -71,9 +114,9 @@
     dispatch_async(queue, ^{
         NSLog(@"任务2");
         //EXC_BAD_INSTRUCTION 死锁 任务在同一个队列
-        dispatch_sync(queue, ^{
-            NSLog(@"任务3");
-        });
+//        dispatch_sync(queue, ^{
+//            NSLog(@"任务3");
+//        });
         NSLog(@"任务4");
     });
     NSLog(@"任务5");

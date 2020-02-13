@@ -24,14 +24,15 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [self testArr];
+//    [self testArr];
 
 //    让一个子线程不进入消亡状态，等待其他线程发来消息，处理其他事件
-    self.expThread = [[NSThread alloc] initWithTarget:self selector:@selector(expRun) object:nil];
-    [self.expThread start];
+//    self.expThread = [[NSThread alloc] initWithTarget:self selector:@selector(expRun) object:nil];
+//    [self.expThread start];
     [self test3];
+    [self test8];
 //    往常驻线程发送消息
-    [self performSelector:@selector(work) onThread:self.expThread withObject:nil waitUntilDone:NO];
+//    [self performSelector:@selector(work) onThread:self.expThread withObject:nil waitUntilDone:NO];
     
 //    常见的放卡顿操作
 //    [self.imageView performSelector:@selector(setImage:) withObject:[UIImage imageNamed:@"01"] afterDelay:3.0 inModes:@[NSDefaultRunLoopMode]];
@@ -109,18 +110,20 @@
 
 - (void)test3
 {
+//    串行队列
     dispatch_queue_t queue = dispatch_queue_create("com.test3.serialQueue", DISPATCH_QUEUE_SERIAL);
     NSLog(@"任务1");
+//    异步函数不堵塞线程
     dispatch_async(queue, ^{
         NSLog(@"任务2");
-        //EXC_BAD_INSTRUCTION 死锁 任务在同一个队列
+        //同步函数+串行队列 堵塞 EXC_BAD_INSTRUCTION 死锁 任务在同一个队列
 //        dispatch_sync(queue, ^{
 //            NSLog(@"任务3");
 //        });
         NSLog(@"任务4");
     });
     NSLog(@"任务5");
-//    1->5.2不确定  3.4死锁
+//    1->5-> 2  3.4死锁
 }
 
 /*
@@ -210,7 +213,7 @@
     
     //barrier之前的执行完 再执行后面的async,前后均异步无序
     dispatch_barrier_async(myQueue, ^{
-        NSLog(@"test8---任务C");
+        NSLog(@"test8--barrier-任务C");
     });
     
     dispatch_async(myQueue, ^{
